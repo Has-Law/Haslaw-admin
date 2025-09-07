@@ -1,1 +1,85 @@
 @import "tailwindcss";
+
+@font-face {
+  font-family: "BritanicaHeavy";
+  src: url('/fonts/BritanicaHeavyRegular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: "BritanicaBlack";
+  src: url('/fonts/BritanicaBlackRegular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: "BritanicaBold";
+  src: url('/fonts/BritanicaBoldRegular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: "BritanicaRegular";
+  src: url('/fonts/BritanicaRegular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: "LatoBold";
+  src: url('/fonts/LatoBold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: "LatoRegular";
+  src: url('/fonts/LatoRegular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: "MontserratBold";
+  src: url('/fonts/MontserratBold.ttf') format('truetype');
+}
+
+.font_britanica_heavy{
+  font-family: "BritanicaHeavy", sans-serif;
+}
+
+.font_britanica_black{
+  font-family: "BritanicaBlack", sans-serif;
+}
+
+.font_britanica_bold{
+  font-family: "BritanicaBold", sans-serif;
+}
+
+.font_britanica_regular{
+  font-family: "BritanicaRegular", sans-serif;
+}
+
+.font_lato_bold{
+  font-family: "LatoBold", sans-serif;
+}
+
+.font_lato_regular{
+  font-family: "LatoRegular", sans-serif;
+}
+
+.font_montserrat_bold{
+  font-family: "MontserratBold", sans-serif;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out forwards;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  display: none;
+  -webkit-appearance: none;
+}
+
