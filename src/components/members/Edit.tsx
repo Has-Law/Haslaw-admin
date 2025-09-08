@@ -502,7 +502,7 @@ const EditMemberPage = () => {
                             />
                         </div>
 
-                        <DynamicListSection title="Practice Focus" list={practiceFocus} setList={setPracticeFocus} />
+                        <DynamicListSection title="Work Experience" list={practiceFocus} setList={setPracticeFocus} />
                         <DynamicListSection title="Education" list={education} setList={setEducation} />
                         <DynamicListSection title="Language" list={language} setList={setLanguage} />
                     </div>
