@@ -223,7 +223,7 @@ const Dashboard = () => {
                                                 {item.status === 'Posted' ? 'Posted' : 'Draft'}
                                             </span>
                                         </div>
-                                        <div className="px-6 py-2 bg-[#F5F5F5] rounded-r-xl w-32">
+                                        <div className="px-6 py-2 bg-[#F5F5F5] rounded-r-xl flex-shrink-0 w-32">
                                             <div className="flex items-center gap-4">
                                                 <button onClick={() => handleEdit(item.id)} className="hover:opacity-75" title="Edit berita">
                                                     <Image src={icEdit} alt="Edit" className="w-8" />
