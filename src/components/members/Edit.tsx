@@ -504,7 +504,7 @@ const EditMemberPage = () => {
 
                         <DynamicListSection title="Work Experience" list={practiceFocus} setList={setPracticeFocus} />
                         <DynamicListSection title="Education" list={education} setList={setEducation} />
-                        <DynamicListSection title="Language" list={language} setList={setLanguage} />
+                        <DynamicListSection title="Remarks" list={language} setList={setLanguage} />
                     </div>
 
                     <div className="flex justify-end mt-8">
