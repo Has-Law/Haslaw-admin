@@ -255,14 +255,14 @@ const MembersDashboard = () => {
                 <div className="flex flex-col">
                     <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between w-full mb-8 gap-4">
                         <h1 className="font_britanica_bold text-[clamp(4vw,4vw,4vw)] md:text-3xl text-black">
-                            Members 
+                            Lawyers 
                         </h1>
                         
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full lg:w-auto">
                             <div className="relative w-full sm:w-auto">
                                 <input 
                                     type="text" 
-                                    placeholder="Search members..." 
+                                    placeholder="Search lawyers..." 
                                     className="border border-[#A0001B] rounded-full px-4 py-2 pr-10 outline-none w-full sm:w-64 font_britanica_regular"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -277,7 +277,7 @@ const MembersDashboard = () => {
                             <Link href="/members/add" passHref>
                                 <button className="bg-[#A0001B] rounded-lg px-4 py-2 text-white font_britanica_bold hover:bg-[#4F000D] flex items-center justify-center gap-2 whitespace-nowrap transition-colors w-full sm:w-auto">
                                     <span>+</span>
-                                    <span>Add Member</span>
+                                    <span>Add Lawyers</span>
                                 </button>
                             </Link>
                         </div>
