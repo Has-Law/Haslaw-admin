@@ -278,10 +278,10 @@ const AddMember = () => {
                 <div className="flex flex-col gap-8">
                     <Link href="/members" className="flex items-center gap-2 text-[#4F000D] hover:text-[#A0001B] font_britanica_bold cursor-pointer w-fit transition-colors">
                         <Image src={arrow} alt="Back arrow" width={24} height={24} />
-                        <span className='font_britanica_bold text-xl'>Back to Members</span>
+                        <span className='font_britanica_bold text-xl'>Back to Lawyerss</span>
                     </Link>
 
-                    <h1 className="font_britanica_bold text-4xl text-black">Add Member</h1>
+                    <h1 className="font_britanica_bold text-4xl text-black">Add Lawyer</h1>
 
                     {validationErrors.length > 0 && (
                         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -439,7 +439,7 @@ const AddMember = () => {
 
                         <DynamicListSection title="Work Experience" list={practiceFocus} setList={setPracticeFocus} />
                         <DynamicListSection title="Education" list={education} setList={setEducation} />
-                        <DynamicListSection title="Language" list={language} setList={setLanguage} />
+                        <DynamicListSection title="Remarks" list={language} setList={setLanguage} />
                     </div>
 
                     <div className="flex justify-end mt-8">
@@ -448,7 +448,7 @@ const AddMember = () => {
                             disabled={isSaving}
                             className="px-10 py-3 rounded-lg bg-[#A0001B] text-white font_britanica_bold hover:bg-[#4F000D] transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isSaving ? 'Adding...' : 'Add Member'}
+                            {isSaving ? 'Adding...' : 'Add Lawyer'}
                         </button>
                     </div>
                 </div>

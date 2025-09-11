@@ -23,7 +23,7 @@ const Sidebar = () => {
 
     const navLinks = [
         { name: "News & Insight", href: "/news", activeIcon: news, inactiveIcon: newsBlack },
-        { name: "Members", href: "/members", activeIcon: member, inactiveIcon: memberBlack },
+        { name: "Lawyers", href: "/members", activeIcon: member, inactiveIcon: memberBlack },
         { name: "Careers Form", href: "/careers", activeIcon: career, inactiveIcon: careerBlack },
     ];
 
