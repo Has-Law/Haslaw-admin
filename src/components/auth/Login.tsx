@@ -22,15 +22,22 @@ interface LoginResponse {
     };
 }
 
-const setAuthTokens = (accessToken: string, refreshToken: string, expiresIn: number) => {
-  const expirationTime = new Date(Date.now() + expiresIn * 1000);
-  
-  document.cookie = `accessToken=${accessToken}; path=/; expires=${expirationTime.toUTCString()}; SameSite=Lax`;
-  
-  const refreshExpiration = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  document.cookie = `refreshToken=${refreshToken}; path=/; expires=${refreshExpiration.toUTCString()}; SameSite=Lax`;
-  
-document.cookie = `tokenExpiry=${expirationTime.getTime()}; path=/; expires=${expirationTime.toUTCString()}; SameSite=Lax`;};
+const setAuthTokens = (accessToken: string, refreshToken: string, expiresIn: number, userRole: string) => {
+    const expirationTime = new Date(Date.now() + expiresIn * 1000);
+    
+    // Set access token
+    document.cookie = `accessToken=${accessToken}; path=/; expires=${expirationTime.toUTCString()}; SameSite=Lax`;
+    
+    // Set refresh token (7 days)
+    const refreshExpiration = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    document.cookie = `refreshToken=${refreshToken}; path=/; expires=${refreshExpiration.toUTCString()}; SameSite=Lax`;
+    
+    // Set token expiry
+    document.cookie = `tokenExpiry=${expirationTime.getTime()}; path=/; expires=${expirationTime.toUTCString()}; SameSite=Lax`;
+    
+    // Set user role for middleware
+    document.cookie = `userRole=${userRole}; path=/; expires=${refreshExpiration.toUTCString()}; SameSite=Lax`;
+};
 
 const Login = () => {
     const router = useRouter();
@@ -54,7 +61,7 @@ const Login = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ username:username, password }),
+                body: JSON.stringify({ username: username, password }),
             });
 
             const result: LoginResponse = await response.json();
@@ -62,17 +69,26 @@ const Login = () => {
             if (response.ok && result.success) {
                 console.log("Login Berhasil!", result);
                 
+                // Set auth tokens with user role
                 setAuthTokens(
                     result.data.access_token,
                     result.data.refresh_token,
-                    result.data.expires_in
+                    result.data.expires_in,
+                    result.data.user.role
                 );
                 
+                // Store user data in localStorage
                 if (typeof window !== 'undefined') {
                     localStorage.setItem('user', JSON.stringify(result.data.user));
                 }
                 
-                router.push('/news'); 
+                // Redirect based on user role
+                if (result.data.user.role === 'superadmin') {
+                    router.push('/super-admin');
+                } else {
+                    router.push('/news');
+                }
+                
             } else {
                 setError(result.message || "Email atau Password salah!");
             }
