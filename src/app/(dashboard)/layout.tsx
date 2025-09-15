@@ -1,15 +1,25 @@
+'use client'
+import { useState, useEffect } from 'react';
 import Sidebar from '@/components/common/Sidebar'; 
+import SidebarSuperAdmin from '@/components/common/SidebarSuperAdmin';
 import React from 'react';
 
-export default function DashboardLayout({
-    children, 
-}: {
-    children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+    const [userRole, setUserRole] = useState('');
+
+    useEffect(() => {
+        const userDataString = localStorage.getItem('user');
+        if (userDataString) {
+            const userData = JSON.parse(userDataString);
+            setUserRole(userData.role);
+        }
+    }, []);
+
     return (
-        <div className="flex flex-col lg:flex-row h-screen  bg-[#E6EBF0] relative"> 
-            <Sidebar /> 
-            <main className="flex-1 px-4  lg:ml-60 overflow-x-auto"> 
+        <div className="flex">
+            {userRole === 'superadmin' ? <SidebarSuperAdmin /> : <Sidebar />}
+            
+            <main className="flex-1 lg:ml-64">
                 {children}
             </main>
         </div>

@@ -8,31 +8,24 @@ import { getValidAccessToken, removeAuthTokens } from '@/lib/auth';
  * @returns Promise<Response>
  */
 export const apiCallWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
-    // 1. Dapatkan token yang DIJAMIN valid. 
-    // Fungsi ini sudah menangani pengecekan dan proses refresh jika token kedaluwarsa.
+
     const token = await getValidAccessToken();
-    
-    // 2. Jika token tidak ada (karena refresh token gagal atau tidak ada),
-    // hapus semua sisa token dan arahkan pengguna ke halaman login.
+
     if (!token) {
         removeAuthTokens();
         if (typeof window !== 'undefined') {
             window.location.href = '/'; // Arahkan ke halaman login
         }
-        // Lemparkan error untuk menghentikan eksekusi lebih lanjut.
         throw new Error('Sesi kedaluwarsa. Silakan login kembali.');
     }
 
-    // 3. Siapkan header dengan token otorisasi yang valid.
     const headers = new Headers(options.headers);
     headers.set('Authorization', `Bearer ${token}`);
     
-    // Hindari setting Content-Type untuk FormData agar browser bisa menentukannya sendiri.
     if (!(options.body instanceof FormData)) {
         headers.set('Content-Type', 'application/json');
     }
 
-    // 4. Lakukan panggilan fetch ke API.
     const response = await fetch(url, {
         ...options,
         headers,
