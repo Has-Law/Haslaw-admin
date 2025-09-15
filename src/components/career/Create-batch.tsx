@@ -56,8 +56,9 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value as any }));
+    setFormData(prev => ({ ...prev, [name]: value }));
     if (apiError) setApiError(null);
+    if (errors.length > 0) setErrors([]);
   };
 
   const handleSubmit = async (e: React.FormEvent, continueToEditor: boolean = false) => {
@@ -102,6 +103,14 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
         {apiError && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm">
             <p className="text-red-700">{apiError}</p>
+          </div>
+        )}
+
+        {errors.length > 0 && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm">
+            <ul className="list-disc list-inside text-red-700">
+              {errors.map((error, index) => <li key={index}>{error}</li>)}
+            </ul>
           </div>
         )}
 
