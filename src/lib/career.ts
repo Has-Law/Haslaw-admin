@@ -43,32 +43,33 @@ export interface CreateBatchData {
 const formatDateTimeForServer = (dateTimeString: string, type: 'start' | 'end'): string => {
   if (!dateTimeString) return '';
 
+  // Jika input dari datetime-local (misal: "2025-09-17T14:30")
   if (dateTimeString.includes('T')) {
     return dateTimeString.replace('T', ' ') + ':00';
   }
   
+  // Jika input hanya tanggal (misal: "2025-09-17")
   const datePart = dateTimeString.slice(0, 10);
   return type === 'start' ? `${datePart} 00:00:00` : `${datePart} 23:59:59`;
 };
 
+
+// --- FUNGSI API (DENGAN PERBAIKAN) ---
+
 export const createBatch = async (batchData: CreateBatchData): Promise<Batch> => {
   try {
-    // DIUBAH: Menggunakan helper baru yang konsisten
-    const payload = {
-      ...batchData,
-      application_start: formatDateTimeForServer(batchData.application_start, 'start'),
-      application_end: formatDateTimeForServer(batchData.application_end, 'end')
-    };
-    console.log('Creating new batch with formatted payload:', payload);
+    // DIHAPUS: Semua logika format tanggal.
+    // Fungsi ini sekarang hanya mengirim data yang diterima.
+    console.log('Sending final payload to CREATE:', batchData);
 
     const response = await apiCallWithAuth('/api-proxy/api/v1/admin/careers/batches', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(batchData),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('SERVER CREATE ERROR:', { error: errorData, sentData: payload });
+      console.error('SERVER CREATE ERROR:', { error: errorData, sentData: batchData });
       throw new Error(errorData.message || 'Failed to create batch');
     }
     const result: ApiResponse<Batch> = await response.json();
@@ -81,25 +82,18 @@ export const createBatch = async (batchData: CreateBatchData): Promise<Batch> =>
 
 export const updateBatch = async (id: number, batchData: Partial<CreateBatchData>): Promise<Batch> => {
   try {
-    const payload: Partial<CreateBatchData> = { ...batchData };
-
-    // DIUBAH: Menggunakan helper baru yang konsisten
-    if (payload.application_start) {
-      payload.application_start = formatDateTimeForServer(payload.application_start, 'start');
-    }
-    if (payload.application_end) {
-      payload.application_end = formatDateTimeForServer(payload.application_end, 'end');
-    }
-    console.log(`Updating batch ${id} with formatted payload:`, payload);
+    // DIHAPUS: Semua logika format tanggal.
+    // Fungsi ini sekarang hanya mengirim data yang diterima.
+    console.log(`Sending final payload to UPDATE for ID ${id}:`, batchData);
 
     const response = await apiCallWithAuth(`/api-proxy/api/v1/admin/careers/batches/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(batchData),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('SERVER UPDATE ERROR:', { error: errorData, sentData: payload });
+      console.error('SERVER UPDATE ERROR:', { error: errorData, sentData: batchData });
       throw new Error(errorData.message || 'Failed to update batch');
     }
     const result: ApiResponse<Batch> = await response.json();

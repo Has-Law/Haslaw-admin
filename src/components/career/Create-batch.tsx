@@ -30,7 +30,6 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
   const [errors, setErrors] = useState<string[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // Logika ini sudah benar untuk menangani datetime-local
   useEffect(() => {
     if (isOpen) {
       if (isEditMode && initialData) {
@@ -61,7 +60,6 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
     if (apiError) setApiError(null);
   };
 
-  // Logika ini sudah benar untuk memformat data ke server
   const handleSubmit = async (e: React.FormEvent, continueToEditor: boolean = false) => {
     e.preventDefault();
     const validationErrors = validateBatchData(formData);
@@ -125,7 +123,6 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
                 <label className="block text-black font_britanica_bold mb-2" htmlFor="application_start">
                   Start Date & Time <span className="text-red-500">*</span>
                 </label>
-                {/* DIKEMBALIKAN: Wrapper div dan Ikon Kalender */}
                 <div className="relative">
                   <input
                     id="application_start" name="application_start" type="datetime-local"
@@ -139,7 +136,6 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
                 <label className="block text-black font_britanica_bold mb-2" htmlFor="application_end">
                   End Date & Time <span className="text-red-500">*</span>
                 </label>
-                {/* DIKEMBALIKAN: Wrapper div dan Ikon Kalender */}
                 <div className="relative">
                   <input
                     id="application_end" name="application_end" type="datetime-local"
@@ -152,7 +148,6 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
             </div>
           </div>
           
-          {/* DIKEMBALIKAN: Tombol terpisah untuk mode Edit dan Tambah */}
           <div className="flex justify-end mt-8">
             {isEditMode ? (
               <button 
