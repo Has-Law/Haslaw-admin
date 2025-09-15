@@ -1,3 +1,4 @@
+
 import { apiCallWithAuth } from '@/utils/apiClient';
 
 export interface FormField {
@@ -36,6 +37,144 @@ export interface CreateBatchData {
   application_end: string;
   status: 'Open' | 'Closed';
 }
+
+
+
+const formatDateTimeForServer = (dateTimeString: string, type: 'start' | 'end'): string => {
+  if (!dateTimeString) return '';
+
+  // Jika input dari datetime-local (misal: "2025-09-17T14:30")
+  if (dateTimeString.includes('T')) {
+    return dateTimeString.replace('T', ' ') + ':00';
+  }
+  
+  // Jika input hanya tanggal (misal: "2025-09-17")
+  const datePart = dateTimeString.slice(0, 10);
+  return type === 'start' ? `${datePart} 00:00:00` : `${datePart} 23:59:59`;
+};
+
+
+// --- FUNGSI API (DENGAN PERBAIKAN) ---
+
+export const createBatch = async (batchData: CreateBatchData): Promise<Batch> => {
+  try {
+    // DIHAPUS: Semua logika format tanggal.
+    // Fungsi ini sekarang hanya mengirim data yang diterima.
+    console.log('Sending final payload to CREATE:', batchData);
+
+    const response = await apiCallWithAuth('/api-proxy/api/v1/admin/careers/batches', {
+      method: 'POST',
+      body: JSON.stringify(batchData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('SERVER CREATE ERROR:', { error: errorData, sentData: batchData });
+      throw new Error(errorData.message || 'Failed to create batch');
+    }
+    const result: ApiResponse<Batch> = await response.json();
+    return result.data;
+  } catch (error) {
+    console.error('Error in createBatch function:', error);
+    throw error;
+  }
+};
+
+export const updateBatch = async (id: number, batchData: Partial<CreateBatchData>): Promise<Batch> => {
+  try {
+    // DIHAPUS: Semua logika format tanggal.
+    // Fungsi ini sekarang hanya mengirim data yang diterima.
+    console.log(`Sending final payload to UPDATE for ID ${id}:`, batchData);
+
+    const response = await apiCallWithAuth(`/api-proxy/api/v1/admin/careers/batches/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(batchData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('SERVER UPDATE ERROR:', { error: errorData, sentData: batchData });
+      throw new Error(errorData.message || 'Failed to update batch');
+    }
+    const result: ApiResponse<Batch> = await response.json();
+    return result.data;
+  } catch (error) {
+    console.error('Error in updateBatch function:', error);
+    throw error;
+  }
+};
+
+
+
+export const validateBatchData = (batchData: CreateBatchData): string[] => {
+  const errors: string[] = [];
+
+  if (!batchData.batch_name?.trim()) {
+    errors.push('Batch name is required');
+  } else if (batchData.batch_name.trim().length < 3) {
+    errors.push('Batch name must be at least 3 characters long');
+  }
+
+  if (!batchData.batch_type?.trim()) {
+    errors.push('Batch type is required');
+  } else if (!['Internship', 'Lawyers', 'Staff'].includes(batchData.batch_type)) {
+    errors.push('Invalid batch type');
+  }
+
+  if (!batchData.application_start?.trim()) {
+    errors.push('Application start date is required');
+  } else {
+    try {
+      const startDate = new Date(batchData.application_start);
+      if (isNaN(startDate.getTime())) {
+        errors.push('Invalid application start date');
+      }
+    } catch (error) {
+      errors.push('Invalid application start date format');
+    }
+  }
+
+  if (!batchData.application_end?.trim()) {
+    errors.push('Application end date is required');
+  } else {
+    try {
+      const endDate = new Date(batchData.application_end);
+      if (isNaN(endDate.getTime())) {
+        errors.push('Invalid application end date');
+      }
+    } catch (error) {
+      errors.push('Invalid application end date format');
+    }
+  }
+
+  if (batchData.application_start && batchData.application_end) {
+    try {
+      const startDate = new Date(batchData.application_start);
+      const endDate = new Date(batchData.application_end);
+      
+      if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+        if (startDate >= endDate) {
+          errors.push('Application end date must be after start date');
+        }
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (startDate < today) {
+          errors.push('Application start date should not be in the past');
+        }
+      }
+    } catch (error) {
+      errors.push('Error validating dates');
+    }
+  }
+
+  if (!batchData.status?.trim()) {
+    errors.push('Status is required');
+  } else if (!['Open', 'Closed'].includes(batchData.status)) {
+    errors.push('Invalid status');
+  }
+
+  return errors;
+};
 
 export const getAllBatches = async (): Promise<Batch[]> => {
   try {
@@ -113,76 +252,6 @@ export const getBatchById = async (id: number): Promise<Batch> => {
   }
 };
 
-export const createBatch = async (batchData: CreateBatchData): Promise<Batch> => {
-  try {
-    console.log('Creating new batch:', batchData);
-
-    const response = await apiCallWithAuth('/api-proxy/api/v1/admin/careers/batches', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(batchData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const result: ApiResponse<Batch> = await response.json();
-
-    if (!result.success) {
-      throw new Error(result.message || 'Failed to create batch');
-    }
-
-    console.log('Batch created successfully:', result.data);
-    return {
-      ...result.data,
-      applicants: []
-    };
-
-  } catch (error) {
-    console.error('Error creating batch:', error);
-    throw new Error(error instanceof Error ? error.message : 'Failed to create batch');
-  }
-};
-
-export const updateBatch = async (id: number, batchData: Partial<CreateBatchData>): Promise<Batch> => {
-  try {
-    console.log(`Updating batch with ID: ${id}`, batchData);
-
-    const response = await apiCallWithAuth(`/api-proxy/api/v1/admin/careers/batches/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(batchData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const result: ApiResponse<Batch> = await response.json();
-
-    if (!result.success) {
-      throw new Error(result.message || 'Failed to update batch');
-    }
-
-    console.log('Batch updated successfully:', result.data);
-    return {
-      ...result.data,
-      applicants: []
-    };
-
-  } catch (error) {
-    console.error('Error updating batch:', error);
-    throw new Error(error instanceof Error ? error.message : 'Failed to update batch');
-  }
-};
-
 export const deleteBatch = async (id: number): Promise<boolean> => {
   try {
     console.log(`Deleting batch with ID: ${id}`);
@@ -222,41 +291,6 @@ export const formatDateRange = (startDate: string, endDate: string): string => {
   };
   
   return `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}`;
-};
-
-export const validateBatchData = (batchData: CreateBatchData): string[] => {
-  const errors: string[] = [];
-
-  if (!batchData.batch_name?.trim()) {
-    errors.push('Batch name is required');
-  }
-
-  if (!batchData.batch_type?.trim()) {
-    errors.push('Batch type is required');
-  }
-
-  if (!batchData.application_start?.trim()) {
-    errors.push('Application start date is required');
-  }
-
-  if (!batchData.application_end?.trim()) {
-    errors.push('Application end date is required');
-  }
-
-  if (batchData.application_start && batchData.application_end) {
-    const startDate = new Date(batchData.application_start);
-    const endDate = new Date(batchData.application_end);
-    
-    if (startDate >= endDate) {
-      errors.push('Application end date must be after start date');
-    }
-  }
-
-  if (!batchData.status?.trim()) {
-    errors.push('Status is required');
-  }
-
-  return errors;
 };
 
 export interface BatchFilters {
@@ -432,7 +466,6 @@ export interface Applicant {
   status: 'New' | 'Viewed' | 'Contacted' | 'Rejected'; 
   application_values: ApplicationValue[];
 }
-
 
 export const getApplicantsByBatchId = async (batchId: number, status?: string): Promise<Applicant[]> => {
   try {

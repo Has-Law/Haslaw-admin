@@ -162,7 +162,7 @@ const EditMemberPage = () => {
     const [position, setPosition] = useState('');
     const [isPositionDropdownOpen, setIsPositionDropdownOpen] = useState(false);
     const positionDropdownRef = useRef<HTMLDivElement>(null);
-    const positions = ["Managing Partner", "Senior Partner", "Partner", "Senior Associate", "Associate"];
+    const positions = [ "Senior Partner", "Partner", "Associates","Mid Associates","of Counsel"];
 
     const [businessCard, setBusinessCard] = useState<{ file: File | null, preview: string | null }>({ file: null, preview: null });
     const [detailImage, setDetailImage] = useState<{ file: File | null, preview: string | null }>({ file: null, preview: null });
@@ -186,10 +186,13 @@ const EditMemberPage = () => {
     };
 
     const getImageUrl = (imagePath: string) => {
-        if (!imagePath) return null;
-        if (imagePath.startsWith('http')) return imagePath;
-        return `https://api.has-law.com/${imagePath}`;
-    };
+    if (!imagePath) return null;
+    if (imagePath.startsWith('http')) return imagePath;
+
+    const cleanPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
+
+    return `https://api.has-law.com/${cleanPath}`;
+};
 
     useEffect(() => {
         const loadMemberData = async () => {

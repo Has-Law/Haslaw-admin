@@ -28,6 +28,7 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
   
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -35,8 +36,8 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
         setFormData({
           batch_name: initialData.batch_name,
           batch_type: initialData.batch_type,
-          application_start: initialData.application_start.slice(0, 10),
-          application_end: initialData.application_end.slice(0, 10),
+          application_start: initialData.application_start.slice(0, 16).replace(' ', 'T'),
+          application_end: initialData.application_end.slice(0, 16).replace(' ', 'T'),
           status: initialData.status,
         });
       } else {
@@ -49,12 +50,14 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
         });
       }
       setErrors([]);
+      setApiError(null);
     }
   }, [isOpen, initialData, isEditMode, batchType]);
   
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value as any }));
+    if (apiError) setApiError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent, continueToEditor: boolean = false) => {
@@ -64,18 +67,25 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
       setErrors(validationErrors);
       return;
     }
-
     setIsLoading(true);
-    setErrors([]);
+    setApiError(null);
+    
+    const payload = {
+      ...formData,
+      application_start: formData.application_start.replace('T', ' ') + ':00',
+      application_end: formData.application_end.replace('T', ' ') + ':00',
+    };
+
     try {
-      const result = await onSubmit(formData);
+      const result = await onSubmit(payload);
       if (!isEditMode && continueToEditor && result) {
         router.push(`/careers/${batchType.toLowerCase()}/details/${result.id}`);
       }
+      onClose();
     } catch (error) {
-       console.error("Failed to submit batch form:", error);
+      setApiError(error instanceof Error ? error.message : 'An unknown error occurred');
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -89,11 +99,9 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
           <button onClick={onClose} disabled={isLoading} className="text-3xl text-gray-500 hover:text-gray-800 leading-none">&times;</button>
         </div>
         
-        {errors.length > 0 && (
+        {apiError && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm">
-            <ul className="list-disc list-inside text-red-700">
-              {errors.map((error, index) => <li key={index}>{error}</li>)}
-            </ul>
+            <p className="text-red-700">{apiError}</p>
           </div>
         )}
 
@@ -113,11 +121,11 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
             <div className="flex flex-col md:flex-row gap-6">
               <div className="flex-1">
                 <label className="block text-black font_britanica_bold mb-2" htmlFor="application_start">
-                  Start Date <span className="text-red-500">*</span>
+                  Start Date & Time <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
-                    id="application_start" name="application_start" type="date"
+                    id="application_start" name="application_start" type="datetime-local"
                     value={formData.application_start} onChange={handleInputChange} disabled={isLoading}
                     className="w-full p-2 text-xl border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A0001B] custom-date-icon"
                   />
@@ -126,11 +134,11 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
               </div>
               <div className="flex-1">
                 <label className="block text-black font_britanica_bold mb-2" htmlFor="application_end">
-                  End Date <span className="text-red-500">*</span>
+                  End Date & Time <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
-                    id="application_end" name="application_end" type="date"
+                    id="application_end" name="application_end" type="datetime-local"
                     value={formData.application_end} onChange={handleInputChange} disabled={isLoading}
                     className="w-full p-2 text-xl border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A0001B] custom-date-icon"
                   />
@@ -139,6 +147,7 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
               </div>
             </div>
           </div>
+          
           <div className="flex justify-end mt-8">
             {isEditMode ? (
               <button 
