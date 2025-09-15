@@ -40,26 +40,13 @@ export interface CreateBatchData {
 
 
 
-const formatDateTimeForServer = (dateTimeString: string, type: 'start' | 'end'): string => {
-  if (!dateTimeString) return '';
 
-  // Jika input dari datetime-local (misal: "2025-09-17T14:30")
-  if (dateTimeString.includes('T')) {
-    return dateTimeString.replace('T', ' ') + ':00';
-  }
-  
-  // Jika input hanya tanggal (misal: "2025-09-17")
-  const datePart = dateTimeString.slice(0, 10);
-  return type === 'start' ? `${datePart} 00:00:00` : `${datePart} 23:59:59`;
-};
 
 
 // --- FUNGSI API (DENGAN PERBAIKAN) ---
 
 export const createBatch = async (batchData: CreateBatchData): Promise<Batch> => {
   try {
-    // DIHAPUS: Semua logika format tanggal.
-    // Fungsi ini sekarang hanya mengirim data yang diterima.
     console.log('Sending final payload to CREATE:', batchData);
 
     const response = await apiCallWithAuth('/api-proxy/api/v1/admin/careers/batches', {
@@ -82,8 +69,7 @@ export const createBatch = async (batchData: CreateBatchData): Promise<Batch> =>
 
 export const updateBatch = async (id: number, batchData: Partial<CreateBatchData>): Promise<Batch> => {
   try {
-    // DIHAPUS: Semua logika format tanggal.
-    // Fungsi ini sekarang hanya mengirim data yang diterima.
+
     console.log(`Sending final payload to UPDATE for ID ${id}:`, batchData);
 
     const response = await apiCallWithAuth(`/api-proxy/api/v1/admin/careers/batches/${id}`, {
@@ -98,9 +84,9 @@ export const updateBatch = async (id: number, batchData: Partial<CreateBatchData
     }
     const result: ApiResponse<Batch> = await response.json();
     return result.data;
-  } catch (error) {
-    console.error('Error in updateBatch function:', error);
-    throw error;
+  } catch (_error) {
+    console.error('Error in updateBatch function:', _error);
+    throw _error;
   }
 };
 
@@ -129,7 +115,7 @@ export const validateBatchData = (batchData: CreateBatchData): string[] => {
       if (isNaN(startDate.getTime())) {
         errors.push('Invalid application start date');
       }
-    } catch (error) {
+    } catch {
       errors.push('Invalid application start date format');
     }
   }
@@ -142,7 +128,7 @@ export const validateBatchData = (batchData: CreateBatchData): string[] => {
       if (isNaN(endDate.getTime())) {
         errors.push('Invalid application end date');
       }
-    } catch (error) {
+    } catch  {
       errors.push('Invalid application end date format');
     }
   }
@@ -162,7 +148,7 @@ export const validateBatchData = (batchData: CreateBatchData): string[] => {
           errors.push('Application start date should not be in the past');
         }
       }
-    } catch (error) {
+    } catch  {
       errors.push('Error validating dates');
     }
   }
