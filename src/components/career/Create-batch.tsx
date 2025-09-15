@@ -30,11 +30,10 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
   const [errors, setErrors] = useState<string[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
 
+  // Logika ini sudah benar untuk menangani datetime-local
   useEffect(() => {
     if (isOpen) {
       if (isEditMode && initialData) {
-        // DIUBAH: Format data agar sesuai dengan input datetime-local
-        // Ambil YYYY-MM-DDTHH:mm dari data server
         setFormData({
           batch_name: initialData.batch_name,
           batch_type: initialData.batch_type,
@@ -62,6 +61,7 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
     if (apiError) setApiError(null);
   };
 
+  // Logika ini sudah benar untuk memformat data ke server
   const handleSubmit = async (e: React.FormEvent, continueToEditor: boolean = false) => {
     e.preventDefault();
     const validationErrors = validateBatchData(formData);
@@ -72,7 +72,6 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
     setIsLoading(true);
     setApiError(null);
     
-    // DIUBAH: Mengonversi nilai dari datetime-local ke format server
     const payload = {
       ...formData,
       application_start: formData.application_start.replace('T', ' ') + ':00',
@@ -108,9 +107,9 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
           </div>
         )}
 
-        <form onSubmit={(e) => handleSubmit(e, !isEditMode)}>
-          {/* ... input batch_name ... */}
-          <div>
+        <form>
+          <div className="space-y-6">
+            <div>
               <label className="block text-black font_britanica_bold mb-2" htmlFor="batch_name">
                 Batch Title <span className="text-red-500">*</span>
               </label>
@@ -121,45 +120,55 @@ const BatchModal: React.FC<BatchModalProps> = ({ isOpen, onClose, onSubmit, init
                 placeholder="Enter Batch Title"
               />
             </div>
-            
-          <div className="flex flex-col md:flex-row gap-6 mt-6">
-            <div className="flex-1">
-              <label className="block text-black font_britanica_bold mb-2" htmlFor="application_start">
-                Start Date & Time <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                {/* DIUBAH: Tipe input menjadi datetime-local */}
-                <input
-                  id="application_start" name="application_start" type="datetime-local"
-                  value={formData.application_start} onChange={handleInputChange} disabled={isLoading}
-                  className="w-full p-2 text-xl border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A0001B]"
-                />
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="flex-1">
+                <label className="block text-black font_britanica_bold mb-2" htmlFor="application_start">
+                  Start Date & Time <span className="text-red-500">*</span>
+                </label>
+                {/* DIKEMBALIKAN: Wrapper div dan Ikon Kalender */}
+                <div className="relative">
+                  <input
+                    id="application_start" name="application_start" type="datetime-local"
+                    value={formData.application_start} onChange={handleInputChange} disabled={isLoading}
+                    className="w-full p-2 text-xl border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A0001B] custom-date-icon"
+                  />
+                  <Image src={calendarIcon} alt="Calendar" width={28} height={28} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"/>
+                </div>
               </div>
-            </div>
-            <div className="flex-1">
-              <label className="block text-black font_britanica_bold mb-2" htmlFor="application_end">
-                End Date & Time <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                {/* DIUBAH: Tipe input menjadi datetime-local */}
-                <input
-                  id="application_end" name="application_end" type="datetime-local"
-                  value={formData.application_end} onChange={handleInputChange} disabled={isLoading}
-                  className="w-full p-2 text-xl border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A0001B]"
-                />
+              <div className="flex-1">
+                <label className="block text-black font_britanica_bold mb-2" htmlFor="application_end">
+                  End Date & Time <span className="text-red-500">*</span>
+                </label>
+                {/* DIKEMBALIKAN: Wrapper div dan Ikon Kalender */}
+                <div className="relative">
+                  <input
+                    id="application_end" name="application_end" type="datetime-local"
+                    value={formData.application_end} onChange={handleInputChange} disabled={isLoading}
+                    className="w-full p-2 text-xl border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A0001B] custom-date-icon"
+                  />
+                  <Image src={calendarIcon} alt="Calendar" width={28} height={28} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"/>
+                </div>
               </div>
             </div>
           </div>
-          {/* ... input status dan tombol submit ... */}
-
+          
+          {/* DIKEMBALIKAN: Tombol terpisah untuk mode Edit dan Tambah */}
           <div className="flex justify-end mt-8">
+            {isEditMode ? (
               <button 
-                type="submit"
-                disabled={isLoading}
+                type="button" onClick={(e) => handleSubmit(e)} disabled={isLoading}
+                className="bg-[#A0001B] text-white py-2 px-12 rounded-lg font_britanica_bold hover:bg-[#780014] transition-colors disabled:bg-gray-400"
+              >
+                {isLoading ? 'Saving...' : 'Save'}
+              </button>
+            ) : (
+              <button 
+                type="button" onClick={(e) => handleSubmit(e, true)} disabled={isLoading}
                 className="bg-[#A0001B] text-white py-2 px-6 rounded-lg font_britanica_bold hover:bg-[#780014] transition-colors disabled:bg-gray-400"
               >
-                {isLoading ? 'Saving...' : (isEditMode ? 'Save' : 'Save and continue')}
+                {isLoading ? 'Saving...' : 'Save and continue to editor form'}
               </button>
+            )}
           </div>
         </form>
       </div>
