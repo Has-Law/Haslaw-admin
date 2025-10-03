@@ -160,7 +160,7 @@ const AddMember = () => {
     const [position, setPosition] = useState('');
     const [isPositionDropdownOpen, setIsPositionDropdownOpen] = useState(false);
     const positionDropdownRef = useRef<HTMLDivElement>(null);
-    const positions = [ "Senior Partner", "Partner", "Associates","Mid Associates","of Counsel"];
+    const positions = [ "Senior Partner", "Partner","Senior Associate", "Associates","Mid Associate","of Counsel"];
 
     const [businessCard, setBusinessCard] = useState<{ file: File | null, preview: string | null }>({ file: null, preview: null });
     const [detailImage, setDetailImage] = useState<{ file: File | null, preview: string | null }>({ file: null, preview: null });
