@@ -11,9 +11,6 @@ import icDelete from "@/assets/news/delete.png";
 import icEdit from "@/assets/news/edit.png";
 import deleteIcon from "@/assets/news/delete-pop.png"; 
 
-// PERBAIKAN: Hapus konstanta API_BASE_URL yang tidak terpakai
-// const API_BASE_URL = 'https://api.has-law.com';
-
 const CustomNotification = ({ message, type, onClose }: { 
     message: string; 
     type: 'success' | 'error'; 
