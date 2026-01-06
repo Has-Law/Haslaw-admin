@@ -65,13 +65,14 @@ const BatchList: React.FC<BatchListProps> = ({ title, batchType }) => {
     }, [batchType,fetchBatches]);
 
     const handleDelete = async (id: number) => {
-        if (window.confirm('Are you sure you want to delete this batch?')) {
+        if (window.confirm('Apakah Anda yakin ingin menghapus batch ini?')) {
             try {
                 await deleteBatch(id);
-                showNotification('Batch deleted successfully!', 'success');
+                showNotification('Batch berhasil dihapus!', 'success');
                 await fetchBatches();
             } catch (err) {
-                showNotification(err instanceof Error ? err.message : 'Failed to delete batch', 'error');
+                const errorMessage = err instanceof Error ? err.message : 'Gagal menghapus batch. Silakan coba lagi.';
+                showNotification(errorMessage, 'error');
             }
         }
     };
@@ -90,18 +91,19 @@ const BatchList: React.FC<BatchListProps> = ({ title, batchType }) => {
         try {
             if (editingBatch) {
                 await updateBatch(editingBatch.id, data);
-                showNotification('Batch updated successfully!', 'success');
+                showNotification('Batch berhasil diperbarui!', 'success');
                 setIsModalOpen(false);
                 await fetchBatches();
             } else {
                 const newBatch = await createBatch(data);
-                showNotification('Batch created successfully!', 'success');
+                showNotification('Batch baru berhasil dibuat!', 'success');
                 setIsModalOpen(false);
                 await fetchBatches(); 
                 return newBatch;
             }
         } catch (error) {
-            showNotification(error instanceof Error ? error.message : 'Operation failed', 'error');
+            const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan. Silakan coba lagi.';
+            showNotification(errorMessage, 'error');
             throw error;
         }
     };

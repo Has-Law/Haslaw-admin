@@ -92,6 +92,66 @@ const ImageUploadBox = ({ title, imagePreview, onImageUpload, onImageRemove, req
     );
 };
 
+const PDFUploadBox = ({ title, fileName, existingUrl, onFileUpload, onFileRemove, required = false }: {
+    title: string;
+    fileName: string | null;
+    existingUrl?: string | null;
+    onFileUpload: (event: ChangeEvent<HTMLInputElement>) => void;
+    onFileRemove: () => void;
+    required?: boolean;
+}) => {
+    const hasFile = fileName || existingUrl;
+    const displayName = fileName || (existingUrl ? 'Business Card (PDF)' : null);
+    
+    return (
+        <div>
+            <label className="block text-black font_britanica_bold mb-2">
+                {title} {required && <span className="text-red-500">*</span>}
+            </label>
+            {hasFile ? (
+                <div className="relative w-full border-2 border-dashed border-gray-300 rounded-lg p-4 flex items-center justify-between bg-gray-50">
+                    <div className="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <div className="flex flex-col">
+                            <span className="font_britanica_regular text-gray-700 truncate max-w-xs">{displayName}</span>
+                            {existingUrl && !fileName && (
+                                <a href={existingUrl} target="_blank" rel="noopener noreferrer" className="text-[#A0001B] text-sm hover:underline">
+                                    Lihat file saat ini
+                                </a>
+                            )}
+                        </div>
+                    </div>
+                    <button
+                        onClick={onFileRemove}
+                        type="button"
+                        className="bg-red-500 text-white rounded-full p-1.5 leading-none hover:bg-red-600 cursor-pointer"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            ) : (
+                <div className="relative border-2 border-dashed border-[#323232] rounded-lg p-8 text-center bg-gray-50 hover:bg-gray-100 transition-colors duration-200 cursor-pointer">
+                    <input
+                        type="file"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        onChange={onFileUpload}
+                        accept="application/pdf"
+                    />
+                    <Image src={uploadCloud} alt="Upload icon" width={48} height={48} className="mx-auto mb-3" />
+                    <p className="text-gray-600 font_britanica_regular text-sm">
+                        <span className="text-[#A0001B] font_britanica_bold">Click to upload</span> or drag and drop <br />
+                        PDF only - Up to 5MB
+                    </p>
+                </div>
+            )}
+        </div>
+    );
+};
+
 const DynamicListSection = ({ title, list, setList }: {
     title: string;
     list: DynamicList;
@@ -164,7 +224,7 @@ const EditMemberPage = () => {
     const positionDropdownRef = useRef<HTMLDivElement>(null);
     const positions = [ "Managing Partner","Senior Partner","Senior Associate", "Partner", "Associates","Mid Associate","of Counsel"];
 
-    const [businessCard, setBusinessCard] = useState<{ file: File | null, preview: string | null }>({ file: null, preview: null });
+    const [businessCard, setBusinessCard] = useState<{ file: File | null, name: string | null, existingUrl: string | null }>({ file: null, name: null, existingUrl: null });
     const [detailImage, setDetailImage] = useState<{ file: File | null, preview: string | null }>({ file: null, preview: null });
     const [displayImage, setDisplayImage] = useState<{ file: File | null, preview: string | null }>({ file: null, preview: null });
 
@@ -216,7 +276,7 @@ const EditMemberPage = () => {
                 setLanguage(memberData.language?.length > 0 ? memberData.language : ['']);
 
                 if (memberData.business_card) {
-                    setBusinessCard({ file: null, preview: getImageUrl(memberData.business_card) });
+                    setBusinessCard({ file: null, name: null, existingUrl: getImageUrl(memberData.business_card) });
                 }
                 if (memberData.detail_image) {
                     setDetailImage({ file: null, preview: getImageUrl(memberData.detail_image) });
@@ -308,6 +368,27 @@ const EditMemberPage = () => {
 
             setter({ file, preview: URL.createObjectURL(file) });
         }
+    };
+
+    const handleBusinessCardUpload = (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                showNotification('Ukuran file tidak boleh lebih dari 5MB.', 'error');
+                return;
+            }
+            
+            if (file.type !== 'application/pdf') {
+                showNotification('Business card harus berupa file PDF.', 'error');
+                return;
+            }
+            
+            setBusinessCard({ file, name: file.name, existingUrl: null });
+        }
+    };
+
+    const handleBusinessCardRemove = () => {
+        setBusinessCard({ file: null, name: null, existingUrl: null });
     };
 
     const handleImageRemove = (
@@ -470,11 +551,12 @@ const EditMemberPage = () => {
                             </div>
                         </div>
 
-                        <ImageUploadBox 
-                            title="Business Card" 
-                            imagePreview={businessCard.preview} 
-                            onImageUpload={(e) => handleImageUpload(e, setBusinessCard)} 
-                            onImageRemove={() => handleImageRemove(setBusinessCard, businessCard.preview)} 
+                        <PDFUploadBox 
+                            title="Business Card (PDF)" 
+                            fileName={businessCard.name}
+                            existingUrl={businessCard.existingUrl}
+                            onFileUpload={handleBusinessCardUpload} 
+                            onFileRemove={handleBusinessCardRemove} 
                         />
                         
                         <ImageUploadBox 

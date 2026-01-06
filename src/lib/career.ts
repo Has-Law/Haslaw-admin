@@ -1,5 +1,49 @@
-
 import { apiCallWithAuth } from '@/utils/apiClient';
+
+// Helper function untuk memformat datetime ke YYYY-MM-DD HH:MM:SS
+export const formatDateTimeForAPI = (dateTimeValue: string): string => {
+  if (!dateTimeValue) return '';
+
+  // Jika sudah dalam format yang benar (YYYY-MM-DD HH:MM:SS), return langsung
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateTimeValue)) {
+    return dateTimeValue;
+  }
+
+  // Handle format dari datetime-local input (YYYY-MM-DDTHH:MM)
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dateTimeValue)) {
+    return dateTimeValue.replace('T', ' ') + ':00';
+  }
+
+  // Handle format dengan detik (YYYY-MM-DDTHH:MM:SS)
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(dateTimeValue)) {
+    // Hapus timezone info jika ada (Z atau +00:00)
+    const cleanValue = dateTimeValue.replace(/[Z]$/, '').replace(/[+-]\d{2}:\d{2}$/, '');
+    return cleanValue.replace('T', ' ').slice(0, 19);
+  }
+
+  // Fallback: coba parse sebagai Date
+  try {
+    const date = new Date(dateTimeValue);
+    if (!isNaN(date.getTime())) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    }
+  } catch {
+    // Fall through
+  }
+
+  // Last resort: tambahkan :00 jika belum ada detik
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(dateTimeValue)) {
+    return dateTimeValue + ':00';
+  }
+
+  return dateTimeValue;
+};
 
 export interface FormField {
   id: number;
@@ -21,7 +65,7 @@ export interface Batch {
   updated_at: string;
   applicant_count?: number;
   applicants?: Applicant[];
-  formFields?: FormField[]; 
+  formFields?: FormField[];
 }
 
 export interface ApiResponse<T> {
@@ -43,6 +87,39 @@ export interface CreateBatchData {
 
 
 
+// Helper function untuk translate error dari server ke bahasa yang user-friendly
+const translateServerError = (errorMessage: string, errorDetail?: string): string => {
+  const message = errorMessage?.toLowerCase() || '';
+  const detail = errorDetail?.toLowerCase() || '';
+  
+  if (message.includes('application start date cannot be in the past') || detail.includes('cannot be in the past')) {
+    return 'Tanggal mulai pendaftaran tidak boleh di masa lalu. Silakan pilih tanggal dan waktu yang akan datang.';
+  }
+  if (message.includes('invalid datetime format') || detail.includes('invalid datetime')) {
+    return 'Format tanggal tidak valid. Gunakan format yang benar.';
+  }
+  if (message.includes('batch_name') && message.includes('required')) {
+    return 'Nama batch wajib diisi.';
+  }
+  if (message.includes('already exists') || message.includes('duplicate')) {
+    return 'Batch dengan nama ini sudah ada. Silakan gunakan nama lain.';
+  }
+  if (message.includes('unauthorized') || message.includes('401')) {
+    return 'Sesi Anda telah berakhir. Silakan login kembali.';
+  }
+  if (message.includes('forbidden') || message.includes('403')) {
+    return 'Anda tidak memiliki izin untuk melakukan aksi ini.';
+  }
+  if (message.includes('not found') || message.includes('404')) {
+    return 'Data tidak ditemukan.';
+  }
+  if (message.includes('server error') || message.includes('500')) {
+    return 'Terjadi kesalahan pada server. Silakan coba lagi nanti.';
+  }
+  
+  return errorMessage || 'Terjadi kesalahan. Silakan coba lagi.';
+};
+
 // --- FUNGSI API (DENGAN PERBAIKAN) ---
 
 export const createBatch = async (batchData: CreateBatchData): Promise<Batch> => {
@@ -57,7 +134,8 @@ export const createBatch = async (batchData: CreateBatchData): Promise<Batch> =>
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error('SERVER CREATE ERROR:', { error: errorData, sentData: batchData });
-      throw new Error(errorData.message || 'Failed to create batch');
+      const friendlyMessage = translateServerError(errorData.message, errorData.error);
+      throw new Error(friendlyMessage);
     }
     const result: ApiResponse<Batch> = await response.json();
     return result.data;
@@ -69,7 +147,6 @@ export const createBatch = async (batchData: CreateBatchData): Promise<Batch> =>
 
 export const updateBatch = async (id: number, batchData: Partial<CreateBatchData>): Promise<Batch> => {
   try {
-
     console.log(`Sending final payload to UPDATE for ID ${id}:`, batchData);
 
     const response = await apiCallWithAuth(`/api-proxy/api/v1/admin/careers/batches/${id}`, {
@@ -80,7 +157,8 @@ export const updateBatch = async (id: number, batchData: Partial<CreateBatchData
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error('SERVER UPDATE ERROR:', { error: errorData, sentData: batchData });
-      throw new Error(errorData.message || 'Failed to update batch');
+      const friendlyMessage = translateServerError(errorData.message, errorData.error);
+      throw new Error(friendlyMessage);
     }
     const result: ApiResponse<Batch> = await response.json();
     return result.data;
@@ -96,40 +174,40 @@ export const validateBatchData = (batchData: CreateBatchData): string[] => {
   const errors: string[] = [];
 
   if (!batchData.batch_name?.trim()) {
-    errors.push('Batch name is required');
+    errors.push('Nama batch wajib diisi');
   } else if (batchData.batch_name.trim().length < 3) {
-    errors.push('Batch name must be at least 3 characters long');
+    errors.push('Nama batch minimal 3 karakter');
   }
 
   if (!batchData.batch_type?.trim()) {
-    errors.push('Batch type is required');
+    errors.push('Tipe batch wajib dipilih');
   } else if (!['Internship', 'Lawyers', 'Staff'].includes(batchData.batch_type)) {
-    errors.push('Invalid batch type');
+    errors.push('Tipe batch tidak valid');
   }
 
   if (!batchData.application_start?.trim()) {
-    errors.push('Application start date is required');
+    errors.push('Tanggal mulai pendaftaran wajib diisi');
   } else {
     try {
       const startDate = new Date(batchData.application_start);
       if (isNaN(startDate.getTime())) {
-        errors.push('Invalid application start date');
+        errors.push('Format tanggal mulai tidak valid');
       }
     } catch {
-      errors.push('Invalid application start date format');
+      errors.push('Format tanggal mulai tidak valid');
     }
   }
 
   if (!batchData.application_end?.trim()) {
-    errors.push('Application end date is required');
+    errors.push('Tanggal akhir pendaftaran wajib diisi');
   } else {
     try {
       const endDate = new Date(batchData.application_end);
       if (isNaN(endDate.getTime())) {
-        errors.push('Invalid application end date');
+        errors.push('Format tanggal akhir tidak valid');
       }
-    } catch  {
-      errors.push('Invalid application end date format');
+    } catch {
+      errors.push('Format tanggal akhir tidak valid');
     }
   }
 
@@ -137,26 +215,28 @@ export const validateBatchData = (batchData: CreateBatchData): string[] => {
     try {
       const startDate = new Date(batchData.application_start);
       const endDate = new Date(batchData.application_end);
-      
+      const now = new Date();
+
       if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
-        if (startDate >= endDate) {
-          errors.push('Application end date must be after start date');
+        // Validasi tanggal mulai tidak boleh di masa lalu
+        if (startDate < now) {
+          errors.push('Tanggal mulai pendaftaran tidak boleh di masa lalu. Silakan pilih tanggal dan waktu di masa depan.');
         }
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        if (startDate < today) {
-          errors.push('Application start date should not be in the past');
+        
+        // Validasi tanggal akhir harus setelah tanggal mulai
+        if (startDate >= endDate) {
+          errors.push('Tanggal akhir pendaftaran harus setelah tanggal mulai');
         }
       }
-    } catch  {
-      errors.push('Error validating dates');
+    } catch {
+      errors.push('Terjadi kesalahan saat memvalidasi tanggal');
     }
   }
 
   if (!batchData.status?.trim()) {
-    errors.push('Status is required');
+    errors.push('Status wajib dipilih');
   } else if (!['Open', 'Closed'].includes(batchData.status)) {
-    errors.push('Invalid status');
+    errors.push('Status tidak valid');
   }
 
   return errors;
@@ -193,7 +273,7 @@ export const getAllBatches = async (): Promise<Batch[]> => {
 export const getBatchesByType = async (batchType: 'Internship' | 'Lawyers' | 'Staff'): Promise<Batch[]> => {
   try {
     console.log(`Fetching all batches to filter for type: ${batchType}`);
-    
+
     const allBatches = await getAllBatches();
 
     const filteredBatches = allBatches.filter(
@@ -201,7 +281,7 @@ export const getBatchesByType = async (batchType: 'Internship' | 'Lawyers' | 'St
     );
 
     console.log(`Batches for ${batchType} filtered successfully:`, filteredBatches);
-    
+
     return filteredBatches;
 
   } catch (error) {
@@ -269,13 +349,13 @@ export const deleteBatch = async (id: number): Promise<boolean> => {
 export const formatDateRange = (startDate: string, endDate: string): string => {
   const start = new Date(startDate);
   const end = new Date(endDate);
-  
-  const options: Intl.DateTimeFormatOptions = { 
-    month: 'short', 
-    day: 'numeric', 
-    year: 'numeric' 
+
+  const options: Intl.DateTimeFormatOptions = {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
   };
-  
+
   return `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}`;
 };
 
@@ -447,9 +527,9 @@ export interface Applicant {
   applicant_name: string;
   email: string;
   university: string;
-  current_status: string; 
+  current_status: string;
   application_date: string;
-  status: 'New' | 'Viewed' | 'Contacted' | 'Rejected'; 
+  status: 'New' | 'Viewed' | 'Contacted' | 'Rejected';
   application_values: ApplicationValue[];
 }
 
