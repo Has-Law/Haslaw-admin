@@ -39,6 +39,56 @@ export interface CreateMemberData {
     business_card?: File;
 }
 
+// Helper function untuk translate error dari server ke bahasa yang user-friendly
+const translateMemberError = (errorMessage: string): string => {
+    const message = errorMessage?.toLowerCase() || '';
+
+    if (message.includes('failed to save business card') || message.includes('business_card')) {
+        return 'Gagal menyimpan business card. Business card harus berupa file PDF.';
+    }
+    if (message.includes('invalid file extension') && message.includes('pdf')) {
+        return 'Format file tidak valid. Business card harus berupa file PDF.';
+    }
+    if (message.includes('failed to save display image') || message.includes('display_image')) {
+        return 'Gagal menyimpan foto display. Pastikan format gambar valid (JPEG/PNG/WebP) dan ukuran tidak lebih dari 5MB.';
+    }
+    if (message.includes('failed to save detail image') || message.includes('detail_image')) {
+        return 'Gagal menyimpan foto detail. Pastikan format gambar valid (JPEG/PNG/WebP) dan ukuran tidak lebih dari 5MB.';
+    }
+    if (message.includes('email') && (message.includes('exists') || message.includes('duplicate') || message.includes('unique'))) {
+        return 'Email sudah terdaftar. Silakan gunakan email lain.';
+    }
+    if (message.includes('phone') && (message.includes('exists') || message.includes('duplicate') || message.includes('unique'))) {
+        return 'Nomor telepon sudah terdaftar. Silakan gunakan nomor lain.';
+    }
+    if (message.includes('invalid') && message.includes('email')) {
+        return 'Format email tidak valid.';
+    }
+    if (message.includes('invalid') && message.includes('phone')) {
+        return 'Format nomor telepon tidak valid.';
+    }
+    if (message.includes('required')) {
+        return 'Mohon lengkapi semua field yang wajib diisi.';
+    }
+    if (message.includes('unauthorized') || message.includes('401')) {
+        return 'Sesi Anda telah berakhir. Silakan login kembali.';
+    }
+    if (message.includes('forbidden') || message.includes('403')) {
+        return 'Anda tidak memiliki izin untuk melakukan aksi ini.';
+    }
+    if (message.includes('file too large') || message.includes('size')) {
+        return 'Ukuran file terlalu besar. Maksimal 5MB per file.';
+    }
+    if (message.includes('invalid file type') || message.includes('mime') || message.includes('format')) {
+        return 'Format file tidak didukung. Gunakan JPEG, PNG, atau WebP.';
+    }
+    if (message.includes('invalid file extension')) {
+        return 'Format file tidak valid. Business card harus berupa file PDF.';
+    }
+
+    return errorMessage || 'Terjadi kesalahan. Silakan coba lagi.';
+};
+
 export const fetchMembersList = async (): Promise<ApiMember[]> => {
     try {
         console.log('Fetching members list...');
@@ -115,23 +165,48 @@ export const createMember = async (memberData: CreateMemberData) => {
             formData.append('language', filteredLanguage.join(','));
         }
 
-        if (memberData.display_image) formData.append('display_image', memberData.display_image);
-        if (memberData.detail_image) formData.append('detail_image', memberData.detail_image);
-        if (memberData.business_card) formData.append('business_card', memberData.business_card);
+        // Log file info untuk debugging
+        if (memberData.display_image) {
+            console.log('Display image:', memberData.display_image.name, memberData.display_image.type, memberData.display_image.size);
+            formData.append('display_image', memberData.display_image);
+        }
+        if (memberData.detail_image) {
+            console.log('Detail image:', memberData.detail_image.name, memberData.detail_image.type, memberData.detail_image.size);
+            formData.append('detail_image', memberData.detail_image);
+        }
+        if (memberData.business_card) {
+            const file = memberData.business_card;
+            console.log('Business card file:', file.name, file.type, file.size);
+            formData.append('business_card', file, file.name);
+        }
+
+        // Debug: Log semua FormData entries
+        console.log('=== FormData entries ===');
+        for (const [key, value] of formData.entries()) {
+            if (value instanceof File) {
+                console.log(`  ${key}: File(name=${value.name}, type=${value.type}, size=${value.size})`);
+            } else {
+                console.log(`  ${key}: ${value}`);
+            }
+        }
+        console.log('========================');
 
         const response = await apiCallWithAuth('/api-proxy/api/v1/admin/members', {
             method: 'POST',
             body: formData,
+            headers: {}  // Penting: biarkan browser set Content-Type dengan boundary
         });
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+            console.error('Server error response:', errorData);
+            const friendlyMessage = translateMemberError(errorData.message || errorData.error);
+            throw new Error(friendlyMessage);
         }
         return await response.json();
     } catch (error) {
         console.error('Error creating member:', error);
-        throw new Error(error instanceof Error ? error.message : 'Gagal membuat member');
+        throw error;
     }
 };
 
@@ -160,25 +235,37 @@ export const updateMember = async (id: number, memberData: CreateMemberData) => 
         if (filteredLanguage.length > 0) {
             formData.append('language', filteredLanguage.join(','));
         }
-        if (memberData.display_image) formData.append('display_image', memberData.display_image);
-        if (memberData.detail_image) formData.append('detail_image', memberData.detail_image);
-        if (memberData.business_card) formData.append('business_card', memberData.business_card);
-
         
+        // Log file info untuk debugging
+        if (memberData.display_image) {
+            console.log('Display image:', memberData.display_image.name, memberData.display_image.type, memberData.display_image.size);
+            formData.append('display_image', memberData.display_image);
+        }
+        if (memberData.detail_image) {
+            console.log('Detail image:', memberData.detail_image.name, memberData.detail_image.type, memberData.detail_image.size);
+            formData.append('detail_image', memberData.detail_image);
+        }
+        if (memberData.business_card) {
+            console.log('Business card:', memberData.business_card.name, memberData.business_card.type, memberData.business_card.size);
+            formData.append('business_card', memberData.business_card);
+        }
 
         const response = await apiCallWithAuth(`/api-proxy/api/v1/admin/members/${id}`, {
             method: 'PUT',
             body: formData,
+            headers: {}  // Penting: biarkan browser set Content-Type dengan boundary
         });
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+            console.error('Server error response:', errorData);
+            const friendlyMessage = translateMemberError(errorData.message || errorData.error);
+            throw new Error(friendlyMessage);
         }
         return await response.json();
     } catch (error) {
         console.error('Error updating member:', error);
-        throw new Error(error instanceof Error ? error.message : 'Gagal mengupdate member');
+        throw error;
     }
 }
 export const deleteMember = async (id: number) => {
@@ -264,10 +351,10 @@ export const validateMemberData = (memberData: CreateMemberData): string[] => {
         errors.push('Detail image must be JPEG, PNG, or WebP format');
     }
 
-    const allowedBusinessCardTypes = [...allowedImageTypes, 'application/pdf'];
-
+    // Business card harus PDF
+    const allowedBusinessCardTypes = ['application/pdf'];
     if (memberData.business_card && !allowedBusinessCardTypes.includes(memberData.business_card.type)) {
-        errors.push('Business card must be JPEG, PNG, WebP, or PDF format');
+        errors.push('Business card harus berupa file PDF');
     }
 
     return errors;
